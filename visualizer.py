@@ -19,6 +19,8 @@ class Visualizer(object):
         self.color = [args.r, args.g, args.b]
         self.th = args.th
         self.verbose = args.verbose
+        self.skip = args.skip or args.skip_verbose
+        self.skip_verbose = args.skip_verbose
 
     def visualize_off_or_obj_file(self, verts, faces, save_path=None):
         verts_rgb = torch.Tensor([self.color] * verts.shape[1]).unsqueeze(dim=0)
@@ -41,6 +43,8 @@ class Visualizer(object):
     def visualize_binvox_or_npy_file(self, volume, save_path=None):
         ax = plt.figure().add_subplot(projection="3d")
         ax.voxels(volume, facecolors=self.color, edgecolor="k")
+        ax.view_init(elev=160, azim=-20)
+        plt.axis("off")
 
         if self.show:  # show figure
             plt.show()
@@ -55,8 +59,12 @@ class Visualizer(object):
         else:
             outpath = filepath.replace(self.indir, self.outdir)
 
-        if not path.exists(path.dirname(outpath)):
-            makedirs(path.dirname(outpath), exist_ok=True)
+        if self.skip and path.exists(outpath):
+            if self.skip_verbose:
+                print("Skipping already visualized plot at %s" % outpath)
+            return
+
+        makedirs(path.dirname(outpath), exist_ok=True)
 
         if filepath.endswith(".off"):
             outpath = outpath.replace(".off", ".png")

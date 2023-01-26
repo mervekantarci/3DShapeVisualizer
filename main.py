@@ -27,6 +27,11 @@ def get_args():
                         help='if plot should be displayed')
     parser.add_argument('--verbose', required=False, action="store_true", default=False,
                         help='print output paths')
+    parser.add_argument('--skip', required=False, action="store_true", default=False,
+                        help='skip file when there is a file with the same name in the destination dir'
+                             '(useful when visualizing many files and the process is corrupted)')
+    parser.add_argument('--skip_verbose', required=False, action="store_true", default=False,
+                        help='print path to skipped file')
     parser.add_argument('--th', required=False, action="store", type=float_0010, default="0.3",
                         help='voxelization threshold for npy files  (float between 0.0 and 1.0)')
     parser.add_argument('--r', required=False, action="store", type=float_0010, default="0.7",
