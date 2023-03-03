@@ -6,6 +6,7 @@ from pytorch3d.renderer import TexturesVertex
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import reader
+from util.utils import color_converter
 
 
 class Visualizer(object):
@@ -16,14 +17,16 @@ class Visualizer(object):
         self.filepath = args.file
         self.save = args.save
         self.show = args.show
-        self.color = [args.r, args.g, args.b]
+        self.colorgb = [args.r, args.g, args.b]
+        if self.color is not None:
+            self.colorgb = color_converter(self.color)
         self.th = args.th
         self.verbose = args.verbose
         self.skip = args.skip or args.skip_verbose
         self.skip_verbose = args.skip_verbose
 
     def visualize_off_or_obj_file(self, verts, faces, save_path=None):
-        verts_rgb = torch.Tensor([self.color] * verts.shape[1]).unsqueeze(dim=0)
+        verts_rgb = torch.Tensor([self.colorgb] * verts.shape[1]).unsqueeze(dim=0)
         textures = TexturesVertex(verts_features=verts_rgb)
         mesh = Meshes(verts=verts, faces=faces, textures=textures)
         range_ = [torch.max(verts), torch.min(verts)]
@@ -42,7 +45,7 @@ class Visualizer(object):
 
     def visualize_binvox_or_npy_file(self, volume, save_path=None):
         ax = plt.figure().add_subplot(projection="3d")
-        ax.voxels(volume, facecolors=self.color, edgecolor="k")
+        ax.voxels(volume, facecolors=self.colorgb, edgecolor="k")
         ax.view_init(elev=160, azim=-20)
         plt.axis("off")
 

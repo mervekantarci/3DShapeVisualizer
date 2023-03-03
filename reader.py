@@ -1,4 +1,4 @@
-import binvox_rw
+from util import binvox_rw
 import torch
 from pytorch3d.io import load_obj
 import numpy as np

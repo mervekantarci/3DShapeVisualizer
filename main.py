@@ -34,6 +34,9 @@ def get_args():
                         help='print path to skipped file')
     parser.add_argument('--th', required=False, action="store", type=float_0010, default="0.3",
                         help='voxelization threshold for npy files  (float between 0.0 and 1.0)')
+    parser.add_argument('--color', required=False, action="store", type=str,
+                        help='shape color in [red, blue, green, black, grey, lightgrey]. '
+                             'This will be overwritten by -r -g -b if set')
     parser.add_argument('--r', required=False, action="store", type=float_0010, default="0.7",
                         help='blue value of shape color (float between 0.0 and 1.0)')
     parser.add_argument('--g', required=False, action="store", type=float_0010, default="0.7",
