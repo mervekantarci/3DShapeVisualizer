@@ -1,5 +1,5 @@
-numpy~=1.24.1
-torch~=1.13.1
-pytorch3d~=0.7.2
-matplotlib~=3.6.3
-tqdm~=4.64.1
+tqdm
+torch==1.13.1
+matplotlib==3.6.3
+numpy
+git+https://github.com/facebookresearch/pytorch3d.git@stable
