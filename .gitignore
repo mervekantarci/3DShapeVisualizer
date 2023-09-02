@@ -1,4 +1,8 @@
 py_env
+__pycache__
+
+output
 *.binvox
 *.obj
 *.png
+*.npy

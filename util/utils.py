@@ -1,3 +1,4 @@
+import argparse
 
 def color_converter(color):
     if color == "black":
@@ -13,4 +14,14 @@ def color_converter(color):
     if color == "green":
         return [0.1, 1.0, 0.1]
     return color
+
+
+def float_0010(x):
+    try:
+        x = float(x)
+    except ValueError:
+        raise argparse.ArgumentTypeError("%r not a floating-point literal" % x)
+    if x < 0.0 or x > 1.0:
+        raise argparse.ArgumentTypeError("%r not in range [0.0, 1.0]" % x)
+    return x
 

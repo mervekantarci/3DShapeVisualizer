@@ -15,18 +15,65 @@ class Visualizer(object):
         self.indir = path.dirname(args.file) if args.in_dir is None else args.in_dir
         self.outdir = path.join(path.dirname(self.indir), 'output') if args.out_dir is None else args.out_dir
         self.filepath = args.file
-        self.save = args.save
+        self.save = not args.no_save
         self.show = args.show
-        self.colorgb = [args.r, args.g, args.b]
-        if self.color is not None:
-            self.colorgb = color_converter(self.color)
+        self.color_rgb = [args.r, args.g, args.b]
+        if args.color is not None:
+            self.color_rgb = color_converter(args.color)
         self.th = args.th
         self.verbose = args.verbose
-        self.skip = args.skip or args.skip_verbose
-        self.skip_verbose = args.skip_verbose
+        self.skip_plotted = args.skip_plotted
 
-    def visualize_off_or_obj_file(self, verts, faces, save_path=None):
-        verts_rgb = torch.Tensor([self.colorgb] * verts.shape[1]).unsqueeze(dim=0)
+
+    def visualize_directory(self):
+        fcount = sum(len(files) for _, _, files in walk(self.indir))
+        with tqdm(total=fcount) as pbar:
+            for (dirpath, _, filenames) in walk(self.indir):
+                for filename in filenames:
+                    filepath = path.join(dirpath, filename)
+                    self.visualize_single_file(filepath)
+                    pbar.update(1)
+
+    def visualize_single_file(self, filepath=None):
+        if filepath is None:
+            filepath = self.filepath
+            outpath = path.join(self.outdir, path.basename(filepath))
+        else:
+            outpath = filepath.replace(self.indir, self.outdir)
+
+        outname, ext = path.splitext(outpath)
+        outpath = outname + ".png"
+
+        if self.skip_plotted and path.exists(outpath) and (self.save and not self.show):
+            print("Skipping already visualized plot at %s" % outpath)
+            return
+        
+        makedirs(path.dirname(outpath), exist_ok=True)
+
+        if ext == ".off":
+            verts, faces = reader.read_off(file_path=filepath)
+            self.__visualize_off_or_obj_file(verts, faces, save_path=outpath)
+        elif ext == ".obj":
+            verts, faces = reader.read_obj(file_path=filepath)
+            self.__visualize_off_or_obj_file(verts, faces, save_path=outpath)
+        elif ext == ".binvox":
+            volume = reader.read_binvox(file_path=filepath)
+            self.__visualize_binvox_or_npy_file(volume, save_path=outpath)
+        elif ext == ".npy":
+            volume = reader.read_npy(file_path=filepath, th=self.th)
+            self.__visualize_binvox_or_npy_file(volume, save_path=outpath)
+        elif ext == ".glb":
+            raise Exception("Work in progress")
+        elif ext == ".ply":
+            raise Exception("Work in progress")
+        else:
+            print("Skipping unsupported file %s" % filepath)
+
+        if self.verbose:
+            print("Plot saved to %s" % outpath)
+
+    def __visualize_off_or_obj_file(self, verts, faces, save_path=None):
+        verts_rgb = torch.Tensor([self.color_rgb] * verts.shape[1]).unsqueeze(dim=0)
         textures = TexturesVertex(verts_features=verts_rgb)
         mesh = Meshes(verts=verts, faces=faces, textures=textures)
         range_ = [torch.max(verts), torch.min(verts)]
@@ -43,9 +90,9 @@ class Visualizer(object):
         if self.save:  # save png
             fig.write_image(save_path)
 
-    def visualize_binvox_or_npy_file(self, volume, save_path=None):
+    def __visualize_binvox_or_npy_file(self, volume, save_path=None):
         ax = plt.figure().add_subplot(projection="3d")
-        ax.voxels(volume, facecolors=self.colorgb, edgecolor="k")
+        ax.voxels(volume, facecolors=self.color_rgb, edgecolor="k")
         ax.view_init(elev=160, azim=-20)
         plt.axis("off")
 
@@ -53,53 +100,7 @@ class Visualizer(object):
             plt.show()
         if self.save:  # save png
             plt.savefig(save_path, bbox_inches='tight')
+            plt.clf()
             plt.close()
 
-    def visualize_single_file(self, filepath=None):
-        if filepath is None:
-            filepath = self.filepath
-            outpath = path.join(self.outdir, path.basename(filepath))
-        else:
-            outpath = filepath.replace(self.indir, self.outdir)
-
-        if self.skip and path.exists(outpath):
-            if self.skip_verbose:
-                print("Skipping already visualized plot at %s" % outpath)
-            return
-
-        makedirs(path.dirname(outpath), exist_ok=True)
-
-        if filepath.endswith(".off"):
-            outpath = outpath.replace(".off", ".png")
-            verts, faces = reader.read_off(file_path=filepath)
-            self.visualize_off_or_obj_file(verts, faces, save_path=outpath)
-        elif filepath.endswith(".obj"):
-            outpath = outpath.replace(".obj", ".png")
-            verts, faces = reader.read_obj(file_path=filepath)
-            self.visualize_off_or_obj_file(verts, faces, save_path=outpath)
-        elif filepath.endswith(".binvox"):
-            outpath = outpath.replace(".binvox", ".png")
-            volume = reader.read_binvox(file_path=filepath)
-            self.visualize_binvox_or_npy_file(volume, save_path=outpath)
-        elif filepath.endswith(".npy"):
-            outpath = outpath.replace(".npy", ".png")
-            volume = reader.read_npy(file_path=filepath, th=self.th)
-            self.visualize_binvox_or_npy_file(volume, save_path=outpath)
-        elif filepath.endswith(".glb"):
-            raise Exception("Work in progress")
-        elif filepath.endswith(".ply"):
-            raise Exception("Work in progress")
-        else:
-            print("Skipping unsupported file %s" % filepath)
-
-        if self.verbose:
-            print("Plot saved to %s" % outpath)
-
-    def visualize_directory(self):
-        fcount = sum(len(files) for _, _, files in walk(self.indir))
-        with tqdm(total=fcount) as pbar:
-            for (dirpath, dirnames, filenames) in walk(self.indir):
-                for filename in filenames:
-                    filepath = path.join(dirpath, filename)
-                    self.visualize_single_file(filepath)
-                    pbar.update(1)
+    

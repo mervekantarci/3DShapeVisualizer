@@ -2,4 +2,5 @@ tqdm
 torch==1.13.1
 matplotlib==3.6.3
 numpy
+plotly
 git+https://github.com/facebookresearch/pytorch3d.git@stable
